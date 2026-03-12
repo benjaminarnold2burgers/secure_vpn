@@ -11,34 +11,37 @@ services:
       - 8888:8888/tcp # HTTP proxy
       - 8388:8388/tcp # Shadowsocks
       - 8388:8388/udp # Shadowsocks
-      - 8080:8080/tcp # qBittorrent Web UI (routed through VPN container)
+      - 8080:8080/tcp # qBittorrent Web UI
       - 3000:3000/tcp # Webtop
-      - 3001:3001/tcp #Webtop HTTPS
+      - 3001:3001/tcp # Webtop HTTPS
+      # We don't expose the Torrent port (6881) here because it goes through the VPN tunnel, not the host network
     volumes:
       - ./gluetun:/gluetun
     environment:
-      # Use 'custom' provider because Gluetun doesn't support PureVPN WireGuard natively yet
       - VPN_SERVICE_PROVIDER=custom
       - VPN_TYPE=wireguard
       
-      # WireGuard Interface Config
-      - WIREGUARD_PRIVATE_KEY=4FKa2SLsInza3Ba6+h1uR/8Jv57C/awB+HjzuPBaSHQ=
-      - WIREGUARD_ADDRESSES=172.21.5.244/32
+      # WireGuard Interface Config (OMAN)
+      - WIREGUARD_PRIVATE_KEY=IFFgaSS3WT8aZ/szl+nBOZVvuj6HylUs9gq5jjmfrnE=
+      - WIREGUARD_ADDRESSES=172.21.2.149/32
       
-      # WireGuard Peer Config
-      - WIREGUARD_PUBLIC_KEY=6Of5jYWG4rGoNpso+n3KwQroIdF0alk3WuHZQXkWz2A=
-      - WIREGUARD_ENDPOINT_IP=69.162.118.52
+      # WireGuard Peer Config (OMAN)
+      - WIREGUARD_PUBLIC_KEY=VIs/NY8w7ueAgd8c2lFlxq+Eg0ZqhiNVgIgJGRt2Mhc=
+      - WIREGUARD_ENDPOINT_IP=172.94.96.3
       - WIREGUARD_ENDPOINT_PORT=51820
       - WIREGUARD_PERSISTENT_KEEPALIVE=21
       
-      # DNS (from your config)
-      - DNS_ADDRESS=69.162.118.51
+      # DNS (OMAN)
+      - DNS_ADDRESS=172.94.96.2
+      
+      # Firewall Ports for Torrenting
+      - FIREWALL_VPN_INPUT_PORTS=6881
     restart: always
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
-    network_mode: "service:gluetun" # This forces all traffic through the VPN
+    network_mode: "service:gluetun"
     environment:
       - PUID=1000
       - PGID=1000
@@ -46,19 +49,19 @@ services:
       - WEBUI_PORT=8080
     volumes:
       - ./qbittorrent/config:/config
-      - /mnt/media/Downloads:/downloads # Save directly to your 5TB drive
+      - /mnt/media/Downloads:/downloads
     restart: always
 
   webtop:
     image: lscr.io/linuxserver/webtop:latest
     container_name: webtop
-    network_mode: "service:gluetun" # Route through VPN
+    network_mode: "service:gluetun"
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/New_York
     volumes:
       - ./webtop/config:/config
-      - /mnt/media:/media # Access your 5TB drive
-    shm_size: "1gb" # Important for desktop performance
+      - /mnt/media:/media
+    shm_size: "1gb"
     restart: unless-stopped
