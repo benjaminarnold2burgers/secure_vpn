@@ -12,6 +12,7 @@ services:
       - 8388:8388/tcp # Shadowsocks
       - 8388:8388/udp # Shadowsocks
       - 8080:8080/tcp # qBittorrent Web UI
+      - 9696:9696/tcp # Prowlarr Web UI
       - 3000:3000/tcp # Webtop
       - 3001:3001/tcp # Webtop HTTPS
       # We don't expose the Torrent port (6881) here because it goes through the VPN tunnel, not the host network
@@ -50,6 +51,18 @@ services:
     volumes:
       - ./qbittorrent/config:/config
       - /mnt/media/Downloads:/downloads
+    restart: always
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - ./prowlarr/config:/config
     restart: always
 
   webtop:
